@@ -1,55 +1,47 @@
-# Production Deployment Guide
+# Full Production Deployment Guide — v3
 
 ## Stack
-- **Frontend + API**: Vercel (free tier)
-- **Database**: Supabase or Neon PostgreSQL (free tier)
-- **Cache**: Upstash Redis ✅ already configured
+- **Frontend + API + Crons**: Vercel
+- **Database**: Supabase or Neon (PostgreSQL)
+- **Cache + Rate Limiting**: Upstash Redis ✅ already configured
 
 ---
 
-## Step 1 — Get a PostgreSQL database (free)
+## Step 1 — PostgreSQL (pick one, both free)
 
-### Option A: Supabase (recommended)
-1. Go to https://supabase.com → New Project
-2. Copy your connection string from: Settings → Database → Connection String (URI mode)
-3. It looks like: `postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres`
+### Supabase (recommended)
+1. https://supabase.com → New Project
+2. Settings → Database → Connection String (URI) → copy it
+3. Format: `postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres`
 
-### Option B: Neon
-1. Go to https://neon.tech → New Project
-2. Copy the connection string from the dashboard
+### Neon
+1. https://neon.tech → New Project → copy connection string
 
 ---
 
-## Step 2 — Run the database migration
+## Step 2 — Run Migrations
 
 ```bash
-# Set your DATABASE_URL first
 export DATABASE_URL="postgresql://..."
-
-# Run migration (creates all tables + search vector trigger)
 npx prisma migrate deploy
-
-# Or for local dev:
-npx prisma migrate dev
 ```
 
 ---
 
-## Step 3 — Seed coupons
+## Step 3 — Seed Retailers & Coupons
 
 ```bash
-npm run ingest:coupons
+npm run db:seed          # seeds all 50+ retailers into DB
+npm run ingest:coupons   # seeds 30 verified coupon codes
 ```
 
 ---
 
-## Step 4 — Run product ingestion
+## Step 4 — Run Initial Product Ingestion
 
 ```bash
-# All 50+ retailers
 npm run ingest
-
-# Single retailer
+# or a single retailer:
 npm run ingest -- --retailer asos
 ```
 
@@ -61,36 +53,62 @@ npm run ingest -- --retailer asos
 npx vercel --prod
 ```
 
-Or push to GitHub and connect the repo at https://vercel.com/new
+Or connect GitHub repo at https://vercel.com/new (auto-deploys on push)
 
-Add these environment variables in Vercel dashboard:
+### Required Vercel Environment Variables
 ```
 DATABASE_URL=postgresql://...
+NEXT_PUBLIC_BASE_URL=https://your-domain.vercel.app
+CRON_SECRET=any-random-secret-string
+ADMIN_KEY=any-random-admin-key
+```
+
+### Already wired in vercel.json (no action needed):
+```
 UPSTASH_REDIS_REST_URL=https://helpful-pug-117747.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAcvzAAIgcDEyYmE5ZTZjYWY5Njc0MWVlYTE4N2FlZDdiNThjYTVjYg
+UPSTASH_REDIS_REST_TOKEN=...
 ```
 
 ---
 
-## Step 6 — Set up cron for re-ingestion (keeps products fresh)
+## Cron Jobs (auto-configured in vercel.json)
 
-In `vercel.json` you can add a cron job:
-
-```json
-{
-  "crons": [{
-    "path": "/api/cron/ingest",
-    "schedule": "0 */6 * * *"
-  }]
-}
-```
-
-Then create `app/api/cron/ingest/route.ts` that triggers the ingestion queue.
+| Schedule | Endpoint | Purpose |
+|---|---|---|
+| Every 6 hours | `/api/cron/ingest` | Re-ingest all retailer feeds |
+| Daily at 2am | `/api/cron/coupons` | Refresh coupon database |
 
 ---
 
-## Redis is already live ✅
+## Admin Dashboard
+
+Visit `/admin` on your deployed site to:
+- See live product/retailer/coupon counts
+- Trigger manual ingestion
+- Flush Redis cache
+- View recently ingested products
+
+---
+
+## API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/search?q=...` | Search products |
+| GET | `/api/products/:id` | Get single product |
+| GET | `/api/coupons?retailer=...` | Get coupons |
+| GET | `/api/retailers` | List all retailers |
+| GET | `/api/health` | Health check (DB + Redis) |
+| GET | `/api/admin/stats` | Admin stats |
+| POST | `/api/admin/flush-cache` | Flush Redis cache |
+| GET | `/api/cron/ingest` | Trigger ingestion |
+| GET | `/api/cron/coupons` | Refresh coupons |
+
+---
+
+## Redis — Already Live ✅
 - Host: helpful-pug-117747.upstash.io
-- All search results are cached for 5 minutes
-- Product pages cached for 1 hour
-- Coupon lookups cached for 30 minutes
+- Search results cached 5 min
+- Product pages cached 1 hr
+- Coupons cached 30 min
+- Rate limiting: 60 requests/min per IP

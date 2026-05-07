@@ -6,8 +6,18 @@
     "UPSTASH_REDIS_REST_TOKEN": "gQAAAAAAAcvzAAIgcDEyYmE5ZTZjYWY5Njc0MWVlYTE4N2FlZDdiNThjYTVjYg"
   },
   "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
+    "app/api/cron/**/*.ts": { "maxDuration": 60 },
+    "app/api/search/route.ts": { "maxDuration": 15 },
+    "app/api/**/*.ts": { "maxDuration": 30 }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/ingest",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/coupons",
+      "schedule": "0 2 * * *"
     }
-  }
+  ]
 }
