@@ -1,0 +1,13 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npx prisma generate && next build",
+  "env": {
+    "UPSTASH_REDIS_REST_URL": "https://helpful-pug-117747.upstash.io",
+    "UPSTASH_REDIS_REST_TOKEN": "gQAAAAAAAcvzAAIgcDEyYmE5ZTZjYWY5Njc0MWVlYTE4N2FlZDdiNThjYTVjYg"
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  }
+}

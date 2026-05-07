@@ -1,19 +1,19 @@
 import { Redis } from '@upstash/redis';
 
-let redis: Redis | null = null;
+// Upstash Redis REST client (HTTP-based, works in Edge & Node)
+const redis = new Redis({
+  url: 'https://helpful-pug-117747.upstash.io',
+  token: 'gQAAAAAAAcvzAAIgcDEyYmE5ZTZjYWY5Njc0MWVlYTE4N2FlZDdiNThjYTVjYg',
+});
 
-export function getRedis(): Redis {
-  if (!redis) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-    });
-  }
+export { redis };
+
+export function getRedis() {
   return redis;
 }
 
 export const CACHE_TTL = {
-  search: 60 * 5,       // 5 minutes
-  product: 60 * 60,     // 1 hour
-  coupons: 60 * 30,     // 30 minutes
+  search: 60 * 5,    // 5 min
+  product: 60 * 60,  // 1 hr
+  coupons: 60 * 30,  // 30 min
 };
