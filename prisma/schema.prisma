@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Retailer {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  baseUrl     String
+  logoUrl     String?
+  feedUrl     String?
+  feedType    FeedType  @default(RSS)
+  affiliateNetwork String?
+  isActive    Boolean   @default(true)
+  lastIngested DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+  coupons     Coupon[]
+
+  @@index([slug])
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  externalId   String?
+  retailerId   String
+  retailer     Retailer @relation(fields: [retailerId], references: [id])
+  title        String
+  description  String?
+  price        Float
+  salePrice    Float?
+  currency     String   @default("USD")
+  imageUrl     String?
+  productUrl   String
+  brand        String?
+  category     String?
+  gender       String?
+  color        String?
+  size         String?
+  inStock      Boolean  @default(true)
+  searchVector Unsupported("tsvector")?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([retailerId, externalId])
+  @@index([retailerId])
+  @@index([category])
+  @@index([brand])
+  @@index([price])
+}
+
+model Coupon {
+  id           String   @id @default(cuid())
+  retailerId   String
+  retailer     Retailer @relation(fields: [retailerId], references: [id])
+  code         String?
+  description  String
+  discountType String?  // percent, fixed, free_shipping
+  discountValue Float?
+  minOrderValue Float?
+  isVerified   Boolean  @default(false)
+  isActive     Boolean  @default(true)
+  expiresAt    DateTime?
+  source       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([retailerId])
+}
+
+enum FeedType {
+  RSS
+  XML
+  JSON
+  CSV
+  API
+}

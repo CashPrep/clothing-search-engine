@@ -1,21 +1,31 @@
 {
   "name": "clothing-search-engine",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "ingest": "ts-node --project tsconfig.node.json workers/ingest-all.ts",
+    "ingest:coupons": "ts-node --project tsconfig.node.json workers/coupon-worker.ts",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "ts-node --project tsconfig.node.json prisma/seed.ts"
   },
   "dependencies": {
     "next": "14.2.5",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "lucide-react": "^0.453.0"
+    "lucide-react": "^0.453.0",
+    "@prisma/client": "^5.19.1",
+    "@upstash/redis": "^1.34.0",
+    "bullmq": "^5.13.2",
+    "fast-xml-parser": "^4.5.0"
   },
   "devDependencies": {
+    "prisma": "^5.19.1",
     "typescript": "^5.5.4",
+    "ts-node": "^10.9.2",
     "@types/node": "^22.7.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
